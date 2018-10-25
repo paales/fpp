@@ -41,7 +41,7 @@ function buildEnumConsts(Definition $definition, ?Constructor $constructor, Defi
 
     foreach ($definition->constructors() as $key => $constructor2) {
         $class = buildReferencedClass($definition->namespace(), $constructor2->name());
-        $export = empty($enumDeriving->valueMapping()) ? $key : fpp_var_export($enumDeriving->valueMapping()[$class], '    ');
+        $export = empty($enumDeriving->valueMapping()) ? "'{$class}'" : fpp_var_export($enumDeriving->valueMapping()[$class], '    ');
         $replace .= "    public const $class = $export;\n";
     }
 
