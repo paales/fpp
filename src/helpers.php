@@ -199,7 +199,7 @@ function buildArgumentConstructor(Argument $argument, Definition $definition, De
     foreach ($argumentDefinition->derivings() as $deriving) {
         switch ((string) $deriving) {
             case Deriving\Enum::VALUE:
-                return "$calledClass::fromName(\${$argument->name()})";
+                return "$calledClass::fromValue(\${$argument->name()})";
             case Deriving\FromString::VALUE:
             case Deriving\Uuid::VALUE:
                 return "$calledClass::fromString(\${$argument->name()})";
@@ -283,7 +283,7 @@ CODE;
     foreach ($argumentDefinition->derivings() as $deriving) {
         switch ((string) $deriving) {
             case Deriving\Enum::VALUE:
-                $method = 'fromName';
+                $method = 'fromValue';
                 break;
             case Deriving\FromScalar::VALUE:
                 $method = 'fromScalar';

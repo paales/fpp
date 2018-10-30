@@ -274,7 +274,7 @@ CODE;
                 throw new \InvalidArgumentException("Value for '{$argument->name()}' is not a string in data array");
             }
 
-            \${$argument->name()} = $argumentClass::fromName(\$data['{$argument->name()}']);
+            \${$argument->name()} = $argumentClass::fromValue(\$data['{$argument->name()}']);
         } else {
             \${$argument->name()} = null;
         }
@@ -294,7 +294,7 @@ CODE;
                 throw new \InvalidArgumentException("Value for '{$argument->name()}' in data array is not an array of string");
             }
 
-            \${$argument->name()}[] = $argumentClass::fromName(\$__value);
+            \${$argument->name()}[] = $argumentClass::fromValue(\$__value);
         }
 
 
@@ -305,7 +305,7 @@ CODE;
             throw new \InvalidArgumentException("Key '{$argument->name()}' is missing in data array or is not a string");
         }
 
-        \${$argument->name()} = $argumentClass::fromName(\$data['{$argument->name()}']);
+        \${$argument->name()} = $argumentClass::fromValue(\$data['{$argument->name()}']);
 
 
 CODE;
@@ -435,6 +435,8 @@ CODE;
 
     if (\count($arguments) > 2) {
         $arguments = "\n            " . \implode(",\n            ", $arguments) . "\n        ";
+    } elseif(\count($arguments) === 1 && $arguments[0]->isList()) {
+        $arguments = '...' . \implode(', ', $arguments);
     } else {
         $arguments = \implode(', ', $arguments);
     }
