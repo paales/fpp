@@ -94,18 +94,11 @@ function buildArgumentType(Argument $argument, Definition $definition, bool $wit
         return $code;
     }
 
-    if ($withList && $argument->isList() && ! $argument->nullable()) {
+    if ($withList && $argument->isList()) {
         return 'array';
     }
 
-    if ($withList && $argument->isList() && $argument->nullable()) {
-        return '?array';
-    }
-
     if ($argument->isScalartypeHint()) {
-        if ($argument->nullable()) {
-            $code .= '?';
-        }
         $code .= $argument->type();
 
         return $code;
@@ -125,9 +118,6 @@ function buildArgumentType(Argument $argument, Definition $definition, bool $wit
         ? $name
         : '\\' . $argument->type();
 
-    if ($argument->nullable()) {
-        $code .= '?';
-    }
     $code .= $returnType;
 
     return $code;
@@ -135,7 +125,7 @@ function buildArgumentType(Argument $argument, Definition $definition, bool $wit
 
 function buildArgumentReturnType(Argument $argument, Definition $definition): string
 {
-    if (null === $argument->type()) {
+    if (null === $argument->type() || $argument->nullable()) {
         return '';
     }
 

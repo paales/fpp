@@ -65,9 +65,14 @@ function buildSetters(Definition $definition, ?Constructor $constructor, Definit
             $type .= ' ';
         }
 
+        $defaultValue = '';
+        if ($argument->nullable()) {
+            $defaultValue = ' = null';
+        }
+
         $setterName = 'with' . \ucfirst($argument->name());
         $setters .= buildDocBlockArgumentTypes([$argument], $constructor->name());
-        $setters .= "    public function $setterName($type\${$argument->name()}): $self\n    {\n";
+        $setters .= "    public function $setterName($type\${$argument->name()}$defaultValue): $self\n    {\n";
         $constructorArguments = '';
 
         foreach ($constructor->arguments() as $key2 => $argument2) {

@@ -34,7 +34,7 @@ function buildProperties(Definition $definition, ?Constructor $constructor, Defi
             || $deriving->equals(new Deriving\Query())
             || $deriving->equals(new Deriving\MicroAggregateChanged())
         ) {
-            $properties = "public const MESSAGE_NAME = '"
+            $properties = "const MESSAGE_NAME = '"
                 . buildMessageName($definition, $constructor, $collection, 'message_name') . "';\n\n" .
             "    protected \$messageName = self::MESSAGE_NAME;\n\n";
         }

@@ -40,16 +40,15 @@ function buildArguments(Definition $definition, ?Constructor $constructor, Defin
             continue;
         }
 
-        if ($argument->nullable()) {
-            $argumentList .= '?';
-        }
-
         if ($argument->isScalartypeHint() && 1 === \count($constructor->arguments())) {
             $argumentType = $argument->isList() ? $argument->type() . ' ...' : $argument->type() . ' ';
             $argumentList .= $argumentType . '$' . $argument->name();
 
             if (null !== $argument->defaultValue()) {
                 $argumentList .= ' = ' . $argument->defaultValue();
+            }
+            if ($argument->nullable()) {
+                $argumentList .= ' = null';
             }
 
             $argumentList .= ', ';
@@ -60,6 +59,9 @@ function buildArguments(Definition $definition, ?Constructor $constructor, Defin
 
             if (null !== $argument->defaultValue()) {
                 $argumentList .= ' = ' . $argument->defaultValue();
+            }
+            if ($argument->nullable()) {
+                $argumentList .= ' = null';
             }
 
             $argumentList .= ', ';
@@ -78,12 +80,21 @@ function buildArguments(Definition $definition, ?Constructor $constructor, Defin
         if ($argument->isList() && 1 === \count($constructor->arguments())) {
             $argumentList .= $type . ' ...$' . $argument->name() . ', ';
         } elseif ($argument->isList()) {
-            $argumentList .= 'array $' . $argument->name() . ', ';
+            $argumentList .= 'array $' . $argument->name();
+
+            if ($argument->nullable()) {
+                $argumentList .= ' = null';
+            }
+
+            $argumentList .= ', ';
         } else {
             $argumentList .= $type . ' $' . $argument->name();
 
             if (null !== $argument->defaultValue()) {
                 $argumentList .= ' = ' . $argument->defaultValue();
+            }
+            if ($argument->nullable()) {
+                $argumentList .= ' = null';
             }
 
             $argumentList .= ', ';
