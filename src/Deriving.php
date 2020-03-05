@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -23,4 +24,6 @@ interface Deriving
     public function __toString(): string;
 
     public function equals(Deriving $deriving): bool;
+
+    public function withArguments(array $arguments): self;
 }

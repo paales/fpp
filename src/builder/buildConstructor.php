@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -15,6 +16,7 @@ use Fpp\Constructor;
 use Fpp\Definition;
 use Fpp\DefinitionCollection;
 use Fpp\Deriving;
+use function Fpp\buildDocBlockArgumentTypes;
 
 const buildConstructor = '\Fpp\Builder\buildConstructor';
 
@@ -41,7 +43,20 @@ function buildConstructor(Definition $definition, ?Constructor $constructor, Def
         return $placeHolder;
     }
 
-    $code = "public function __construct($argumentList)\n    {\n";
+    $hasExceptionDeriving = false;
+    foreach ($definition->derivings() as $deriving) {
+        if ($deriving->equals(new Deriving\Exception())) {
+            $hasExceptionDeriving = true;
+            break;
+        }
+    }
+    $docblock = buildDocBlockArgumentTypes($constructor->arguments(), '', $hasExceptionDeriving);
+
+    if ($docblock) {
+        $docblock = \substr($docblock, 4) . '    ';
+    }
+
+    $code = $docblock . "public function __construct($argumentList)\n    {\n";
     $printed = false;
 
     foreach ($definition->conditions() as $condition) {
@@ -67,8 +82,13 @@ CODE;
 
             $printed = true;
 
-            $code .= "        foreach (\${$argument->name()} as \$__value) {\n";
-            $code .= '            if (! ';
+            if ($argument->nullable()) {
+                $code .= "        if (\${$argument->name()} !== null) {\n";
+            }
+
+            $code .= "            \$this->{$argument->name()} = [];\n";
+            $code .= "            foreach (\${$argument->name()} as \$__value) {\n";
+            $code .= '                if (! ';
 
             if ($argument->isScalartypeHint()) {
                 $floatCheck = '';
@@ -81,15 +101,21 @@ CODE;
                 $code .= "\$__value instanceof $type) {\n";
             }
 
-            $code .= "                throw new \InvalidArgumentException('{$argument->name()} expected an array of {$argument->type()}');\n";
+            $code .= "                    throw new \InvalidArgumentException('{$argument->name()} expected an array of {$argument->type()}');\n";
+            $code .= "                }\n";
+            $code .= "                \$this->{$argument->name()}[] = \$__value;\n";
             $code .= "            }\n";
-            $code .= "            \$this->{$argument->name()}[] = \$__value;\n";
-            $code .= "        }\n\n";
+            if ($argument->nullable()) {
+                $code .= "        }\n";
+            }
+            $code .= "\n";
         } else {
             $code .= "        \$this->{$argument->name()} = \${$argument->name()};\n";
         }
     }
-
+    if ($hasExceptionDeriving) {
+        $code .= "        parent::__construct(\$message, \$code, \$previous);\n";
+    }
     $code .= "    }\n";
 
     return $code;

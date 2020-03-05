@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -152,8 +153,8 @@ CODE;
         }
 
         foreach ($argumentDefinition->derivings() as $deriving) {
-            switch ((string) $deriving) {
-                case Deriving\FromArray::VALUE:
+            switch (true) {
+                case $deriving instanceof Deriving\FromArray:
                     if ($argument->nullable()) {
                         $code .= <<<CODE
         if (isset(\$data['{$argument->name()}'])) {
@@ -198,7 +199,7 @@ CODE;
 CODE;
                     }
                     continue 3;
-                case Deriving\FromScalar::VALUE:
+                case $deriving instanceof Deriving\FromScalar:
                     if (isScalarConstructor($argumentConstructor)) {
                         $argumentType = \strtolower($argumentConstructor->name());
                     } elseif (isset($argumentConstructor->arguments()[0])) {
@@ -266,7 +267,9 @@ CODE;
 CODE;
                     }
                     continue 3;
-                case Deriving\Enum::VALUE:
+                case $deriving instanceof Deriving\Enum:
+                    $fromWhat = $deriving->useValue() ? 'fromValue' : 'fromName';
+
                     if ($argument->nullable()) {
                         $code .= <<<CODE
         if (isset(\$data['{$argument->name()}'])) {
@@ -274,7 +277,7 @@ CODE;
                 throw new \InvalidArgumentException("Value for '{$argument->name()}' is not a string in data array");
             }
 
-            \${$argument->name()} = $argumentClass::fromName(\$data['{$argument->name()}']);
+            \${$argument->name()} = $argumentClass::{$fromWhat}(\$data['{$argument->name()}']);
         } else {
             \${$argument->name()} = null;
         }
@@ -294,7 +297,7 @@ CODE;
                 throw new \InvalidArgumentException("Value for '{$argument->name()}' in data array is not an array of string");
             }
 
-            \${$argument->name()}[] = $argumentClass::fromName(\$__value);
+            \${$argument->name()}[] = $argumentClass::{$fromWhat}(\$__value);
         }
 
 
@@ -305,14 +308,14 @@ CODE;
             throw new \InvalidArgumentException("Key '{$argument->name()}' is missing in data array or is not a string");
         }
 
-        \${$argument->name()} = $argumentClass::fromName(\$data['{$argument->name()}']);
+        \${$argument->name()} = $argumentClass::{$fromWhat}(\$data['{$argument->name()}']);
 
 
 CODE;
                     }
                     continue 3;
-                case Deriving\FromString::VALUE:
-                case Deriving\Uuid::VALUE:
+                case $deriving instanceof Deriving\FromString:
+                case $deriving instanceof Deriving\Uuid:
                     if ($argument->nullable()) {
                         $code .= <<<CODE
         if (isset(\$data['{$argument->name()}'])) {
@@ -435,6 +438,8 @@ CODE;
 
     if (\count($arguments) > 2) {
         $arguments = "\n            " . \implode(",\n            ", $arguments) . "\n        ";
+    } elseif (\count($arguments) === 1 && $constructor->arguments()[0]->isList()) {
+        $arguments = '...' . \implode(', ', $arguments);
     } else {
         $arguments = \implode(', ', $arguments);
     }

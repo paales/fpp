@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -16,6 +17,7 @@ use Fpp\Definition;
 use Fpp\DefinitionCollection;
 use Fpp\Deriving;
 use function Fpp\buildArgumentType;
+use function Fpp\buildDocBlockArgumentTypes;
 
 const buildSetters = '\Fpp\Builder\buildSetters';
 
@@ -35,6 +37,7 @@ function buildSetters(Definition $definition, ?Constructor $constructor, Definit
             || $deriving->equals(new Deriving\DomainEvent())
             || $deriving->equals(new Deriving\AggregateChanged())
             || $deriving->equals(new Deriving\MicroAggregateChanged())
+            || $deriving->equals(new Deriving\Exception())
         ) {
             return $placeHolder;
         }
@@ -63,6 +66,7 @@ function buildSetters(Definition $definition, ?Constructor $constructor, Definit
         }
 
         $setterName = 'with' . \ucfirst($argument->name());
+        $setters .= buildDocBlockArgumentTypes([$argument], $constructor->name());
         $setters .= "    public function $setterName($type\${$argument->name()}): $self\n    {\n";
         $constructorArguments = '';
 

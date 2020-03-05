@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -14,6 +15,7 @@ namespace Fpp\Builder;
 use Fpp\Constructor;
 use Fpp\Definition;
 use Fpp\DefinitionCollection;
+use Fpp\Deriving;
 
 const buildArguments = '\Fpp\Builder\buildArguments';
 
@@ -85,6 +87,15 @@ function buildArguments(Definition $definition, ?Constructor $constructor, Defin
             }
 
             $argumentList .= ', ';
+        }
+    }
+
+    foreach ($definition->derivings() as $deriving) {
+        if ($deriving->equals(new Deriving\Exception())) {
+            /** @var Deriving\Exception $deriving */
+            $deriving = $deriving;
+            $argumentList .= \sprintf('string $message = \'%s\', int $code = 0, \\Exception $previous = null, ', $deriving->defaultMessage());
+            break;
         }
     }
 

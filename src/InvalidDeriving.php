@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -102,6 +103,14 @@ class InvalidDeriving extends \RuntimeException
         return new self(\sprintf(
             'Invalid first argument for %s, %s deriving needs first argument to be no nullable and no list',
             self::className($definition),
+            $deriving
+        ));
+    }
+
+    public static function noArgumentsExpected(string $deriving): InvalidDeriving
+    {
+        return new self(\sprintf(
+            "Deriving %s doesn't expect any arguments",
             $deriving
         ));
     }

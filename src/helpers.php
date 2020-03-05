@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -33,6 +34,7 @@ function defaultDerivingMap(): array
         'ToScalar' => new Deriving\ToScalar(),
         'ToString' => new Deriving\ToString(),
         'Uuid' => new Deriving\Uuid(),
+        'Exception' => new Deriving\Exception(),
     ];
 }
 
@@ -69,6 +71,7 @@ function defaultBuilders(): array
         'variable_name' => Builder\buildVariableName,
         'interface_name' => Builder\buildInterfaceName,
         'class_implements' => Builder\buildClassImplements,
+        'exception_constructors' => Builder\buildExceptionConstructors,
     ];
 }
 
@@ -139,24 +142,79 @@ function buildArgumentReturnType(Argument $argument, Definition $definition): st
     return ': ' . buildArgumentType($argument, $definition);
 }
 
-function buildDocBlockReturnType(Argument $argument): string {
+function buildDocBlockReturnType(Argument $argument): string
+{
+    $leadingSlash = $argument->isScalarTypeHint() ? '' : '\\';
+
     if ($argument->isList() && ! $argument->nullable()) {
         $type = $argument->type();
+
         return <<<CODE
     /**
-     * @return \\{$type}[]
+     * @return $leadingSlash{$type}[]
      */
 
 CODE;
     }
+
     if ($argument->isList() && $argument->nullable()) {
         $type = $argument->type();
+
         return <<<CODE
     /**
-     * @return \\{$type}[]|null
+     * @return $leadingSlash{$type}[]|null
      */
 
 CODE;
+    }
+
+    return '';
+}
+
+/**
+ * @param Argument[] $arguments
+ * @param string $instance
+ * @return string
+ */
+function buildDocBlockArgumentTypes(array $arguments, string $instance = '', bool $appendExceptionConstructorParams = false): string
+{
+    $isList = false;
+    $params = '';
+
+    foreach ($arguments as $argument) {
+        $type = $argument->type();
+        $name = $argument->name();
+        $leadingSlash = $argument->isScalarTypeHint() ? '' : '\\';
+
+        if ($argument->isList()) {
+            $isList = true;
+
+            if ($argument->nullable()) {
+                $params .= "     * @param $leadingSlash{$type}[] \$$name\n";
+            } else {
+                $params .= "     * @param $leadingSlash{$type}[]|null \$$name\n";
+            }
+        } else {
+            if ($argument->type()) {
+                $params .= "     * @param $leadingSlash{$type} \$$name\n";
+            } else {
+                $params .= "     * @param $leadingSlash{$type} \$$name\n";
+            }
+        }
+    }
+
+    if ($appendExceptionConstructorParams) {
+        $params .= "     * @param string \$message\n";
+        $params .= "     * @param int \$code\n";
+        $params .= "     * @param null|\Exception \$previous\n";
+    }
+
+    if ($isList && '' === $instance) {
+        return "    /**\n" . $params . "     */\n";
+    }
+
+    if ($isList && '' !== $instance) {
+        return "    /**\n" . $params . "     * @return \\$instance\n     */\n";
     }
 
     return '';
@@ -197,15 +255,17 @@ function buildArgumentConstructor(Argument $argument, Definition $definition, De
         : '\\' . $argument->type();
 
     foreach ($argumentDefinition->derivings() as $deriving) {
-        switch ((string) $deriving) {
-            case Deriving\Enum::VALUE:
-                return "$calledClass::fromName(\${$argument->name()})";
-            case Deriving\FromString::VALUE:
-            case Deriving\Uuid::VALUE:
+        switch (true) {
+            case $deriving instanceof Deriving\Enum:
+                $asWhat = $deriving->useValue() ? 'fromValue' : 'fromName';
+
+                return "$calledClass::{$asWhat}(\${$argument->name()})";
+            case $deriving instanceof Deriving\FromString:
+            case $deriving instanceof Deriving\Uuid:
                 return "$calledClass::fromString(\${$argument->name()})";
-            case Deriving\FromScalar::VALUE:
+            case $deriving instanceof Deriving\FromScalar:
                 return "$calledClass::fromScalar(\${$argument->name()})";
-            case Deriving\FromArray::VALUE:
+            case $deriving instanceof Deriving\FromArray:
                 return "$calledClass::fromArray(\${$argument->name()})";
         }
     }
@@ -283,7 +343,7 @@ CODE;
     foreach ($argumentDefinition->derivings() as $deriving) {
         switch ((string) $deriving) {
             case Deriving\Enum::VALUE:
-                $method = 'fromName';
+                $method = $deriving->useValue() ? 'fromValue' : 'fromName';
                 break;
             case Deriving\FromScalar::VALUE:
                 $method = 'fromScalar';

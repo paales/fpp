@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -112,8 +113,8 @@ CODE;
         }
 
         foreach ($definition->derivings() as $deriving) {
-            switch ((string) $deriving) {
-                case Deriving\ToArray::VALUE:
+            switch (true) {
+                case $deriving instanceof Deriving\ToArray:
                     if ($argument->isList()) {
                         $foundList = true;
                         $buildToArrayBlock($argument, $start);
@@ -127,7 +128,7 @@ CODE;
                     }
 
                     continue 3;
-                case Deriving\ToScalar::VALUE:
+                case $deriving instanceof Deriving\ToScalar:
                     if ($argument->isList()) {
                         $foundList = true;
                         $buildToArrayBlock($argument, $start);
@@ -140,21 +141,22 @@ CODE;
                     }
 
                     continue 3;
-                case Deriving\Enum::VALUE:
+                case $deriving instanceof Deriving\Enum:
                     if ($argument->isList()) {
                         $foundList = true;
                         $buildToArrayBlock($argument, $start);
                         $code .= $addArgument($key, $argument->name(), "\$__array_{$argument->name()}");
                     } else {
+                        $asWhat = $deriving->useValue() ? 'value' : 'name';
                         $value = $argument->nullable()
-                            ? "null === \${$argument->name()} ? null : \${$argument->name()}->name()"
-                            : "\${$argument->name()}->name()";
+                            ? "null === \${$argument->name()} ? null : \${$argument->name()}->{$asWhat}()"
+                            : "\${$argument->name()}->{$asWhat}()";
                         $code .= $addArgument($key, $argument->name(), $value);
                     }
 
                     continue 3;
-                case Deriving\ToString::VALUE:
-                case Deriving\Uuid::VALUE:
+                case $deriving instanceof Deriving\ToString:
+                case $deriving instanceof Deriving\Uuid:
                     if ($argument->isList()) {
                         $foundList = true;
                         $buildToArrayBlock($argument, $start);

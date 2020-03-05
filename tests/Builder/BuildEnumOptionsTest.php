@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -72,6 +73,33 @@ EXPECTED;
         'Blue' => [
             'foo' => 'bar',
         ],
+EXPECTED;
+
+        $this->assertSame($expected, buildEnumOptions($definition, null, new DefinitionCollection($definition), ''));
+    }
+
+    /**
+     * @test
+     */
+    public function it_builds_enum_options_as_value(): void
+    {
+        $constructor1 = new Constructor('My\RED');
+        $constructor2 = new Constructor('My\VERY_RED');
+
+        $definition = new Definition(
+            DefinitionType::data(),
+            'My',
+            'Color',
+            [$constructor1, $constructor2],
+            [new Deriving\Enum(
+                [],
+                ['useValue']
+            )]
+        );
+
+        $expected = <<<EXPECTED
+'RED' => 'RED',
+        'VERY_RED' => 'VERY_RED',
 EXPECTED;
 
         $this->assertSame($expected, buildEnumOptions($definition, null, new DefinitionCollection($definition), ''));

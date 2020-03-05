@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -47,7 +48,9 @@ function buildEnumOptions(Definition $definition, ?Constructor $constructor, Def
     $replace = '';
     foreach ($definition->constructors() as $key => $definitionConstructor) {
         $class = buildReferencedClass($namespace, $definitionConstructor->name());
-        $value = empty($valueMapping) ? $key : $valueMapping[$class];
+
+        $keyValue = $enumDeriving->useValue() ? $class : $key;
+        $value = empty($valueMapping) ? $keyValue : $valueMapping[$class];
         $value = fpp_var_export($value, '        ');
         $replace .= "        '$class' => $value,\n";
     }

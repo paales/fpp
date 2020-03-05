@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -445,16 +446,6 @@ CODE;
         $this->expectExceptionMessage('Marker Foo\\MyMarker cannot extend Foo\\MyData because it\'s not a marker');
 
         $dump($collection);
-    }
-
-    /**
-     * @test
-     */
-    public function it_throws_exception_when_a_marker_extends_an_exception_type(): void
-    {
-        $this->markTestIncomplete(
-          'This test must be implemented when the exception type is added'
-        );
     }
 
     /**

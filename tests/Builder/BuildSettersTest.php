@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -195,6 +196,9 @@ CODE;
             ],
             [
                 new Deriving\MicroAggregateChanged(),
+            ],
+            [
+                new Deriving\Exception(),
             ],
         ];
     }

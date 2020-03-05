@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -167,5 +168,65 @@ class BuildArgumentConstructorTest extends TestCase
         $collection = new DefinitionCollection($definition, $argumentDefinition);
 
         buildArgumentConstructor($argument, $definition, $collection);
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_build_enum_as_value(): void
+    {
+        $constructor1 = new Constructor('My\Red');
+        $constructor2 = new Constructor('My\Blue');
+
+        $simpleColor = new Definition(
+            DefinitionType::data(),
+            'My',
+            'SimpleColor',
+            [$constructor1, $constructor2],
+            [new Deriving\Enum()]
+        );
+
+        $constructor1 = new Constructor('My\RED');
+        $constructor2 = new Constructor('My\VERY_RED');
+
+        $color = new Definition(
+            DefinitionType::data(),
+            'My',
+            'Color',
+            [$constructor1, $constructor2],
+            [new Deriving\Enum(
+                [],
+                ['useValue']
+            )]
+        );
+
+        $constructor = new Constructor('My\Person', [
+            new Argument('simpleColors', 'My\SimpleColor', false, false),
+            new Argument('simpleColorsNullable', 'My\SimpleColor', true, false),
+            new Argument('colors', 'My\Color', false, false),
+            new Argument('colorsNullable', 'My\Color', true, false),
+        ]);
+
+        $definition = new Definition(
+            DefinitionType::data(),
+            'My',
+            'Person',
+            [$constructor],
+            [new Deriving\ToArray()]
+        );
+
+        $collection = new DefinitionCollection($simpleColor, $color);
+
+        $argument = new Argument('simpleColors', 'My\SimpleColor', false, false);
+        $expected = <<<CODE
+SimpleColor::fromName(\$simpleColors)
+CODE;
+        $this->assertSame($expected, buildArgumentConstructor($argument, $definition, $collection));
+
+        $argument = new Argument('colors', 'My\Color', false, false);
+        $expected = <<<CODE
+Color::fromValue(\$colors)
+CODE;
+        $this->assertSame($expected, buildArgumentConstructor($argument, $definition, $collection));
     }
 }

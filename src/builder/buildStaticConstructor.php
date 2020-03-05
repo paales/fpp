@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -14,6 +15,7 @@ namespace Fpp\Builder;
 use Fpp\Constructor;
 use Fpp\Definition;
 use Fpp\DefinitionCollection;
+use function Fpp\buildDocBlockArgumentTypes;
 
 const buildStaticConstructor = '\Fpp\Builder\buildStaticConstructor';
 
@@ -23,7 +25,7 @@ function buildStaticConstructor(Definition $definition, ?Constructor $constructo
         return $placeHolder;
     }
 
-    return <<<CODE
+    return buildDocBlockArgumentTypes($constructor->arguments()) . <<<CODE
 public static function with({{arguments}}): {{class_name}}
     {
         {{static_constructor_body}}

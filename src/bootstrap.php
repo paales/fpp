@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -68,6 +69,7 @@ $files = [
     'builder/buildVariableName.php',
     'builder/buildInterfaceName.php',
     'builder/buildClassImplements.php',
+    'builder/buildExceptionConstructors.php',
 ];
 
 foreach ($files as $file) {

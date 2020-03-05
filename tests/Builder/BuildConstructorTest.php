@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -17,6 +18,7 @@ use Fpp\Constructor;
 use Fpp\Definition;
 use Fpp\DefinitionCollection;
 use Fpp\DefinitionType;
+use Fpp\Deriving;
 use PHPUnit\Framework\TestCase;
 use function Fpp\Builder\buildConstructor;
 
@@ -54,6 +56,7 @@ class BuildConstructorTest extends TestCase
             new Argument('strings', 'string', false, true),
             new Argument('floats', 'float', false, true),
             new Argument('emails', 'Foo\Bar\Email', false, true),
+            new Argument('hobbies', 'Foo\Bar\Hobby', true, true),
         ]);
 
         $person = new Definition(
@@ -61,7 +64,7 @@ class BuildConstructorTest extends TestCase
             'Foo\Bar',
             'Person',
             [$constructor],
-            [],
+            [new Deriving\Exception()],
             [
                 new Condition('Person', 'strlen($name->value()) === 0', 'Name too short'),
                 new Condition('_', '$age->value() < 18', 'Too young'),
@@ -70,7 +73,18 @@ class BuildConstructorTest extends TestCase
         );
 
         $expected = <<<STRING
-public function __construct(Name \$name, Age \$age, array \$strings, array \$floats, array \$emails)
+/**
+     * @param \Foo\Bar\Name \$name
+     * @param \Foo\Bar\Age \$age
+     * @param string[]|null \$strings
+     * @param float[]|null \$floats
+     * @param \Foo\Bar\Email[]|null \$emails
+     * @param \Foo\Bar\Hobby[] \$hobbies
+     * @param string \$message
+     * @param int \$code
+     * @param null|\Exception \$previous
+     */
+    public function __construct(Name \$name, Age \$age, array \$strings, array \$floats, array \$emails, ?array \$hobbies, string \$message = '', int \$code = 0, \Exception \$previous = null)
     {
         if (strlen(\$name->value()) === 0) {
             throw new \InvalidArgumentException('Name too short');
@@ -83,27 +97,41 @@ public function __construct(Name \$name, Age \$age, array \$strings, array \$flo
         \$this->name = \$name;
         \$this->age = \$age;
 
-        foreach (\$strings as \$__value) {
-            if (! \is_string(\$__value)) {
-                throw new \InvalidArgumentException('strings expected an array of string');
+            \$this->strings = [];
+            foreach (\$strings as \$__value) {
+                if (! \is_string(\$__value)) {
+                    throw new \InvalidArgumentException('strings expected an array of string');
+                }
+                \$this->strings[] = \$__value;
             }
-            \$this->strings[] = \$__value;
+
+            \$this->floats = [];
+            foreach (\$floats as \$__value) {
+                if (! \is_float(\$__value) && ! \is_int(\$__value)) {
+                    throw new \InvalidArgumentException('floats expected an array of float');
+                }
+                \$this->floats[] = \$__value;
+            }
+
+            \$this->emails = [];
+            foreach (\$emails as \$__value) {
+                if (! \$__value instanceof \Foo\Bar\Email) {
+                    throw new \InvalidArgumentException('emails expected an array of Foo\Bar\Email');
+                }
+                \$this->emails[] = \$__value;
+            }
+
+        if (\$hobbies !== null) {
+            \$this->hobbies = [];
+            foreach (\$hobbies as \$__value) {
+                if (! \$__value instanceof \Foo\Bar\Hobby) {
+                    throw new \InvalidArgumentException('hobbies expected an array of Foo\Bar\Hobby');
+                }
+                \$this->hobbies[] = \$__value;
+            }
         }
 
-        foreach (\$floats as \$__value) {
-            if (! \is_float(\$__value) && ! \is_int(\$__value)) {
-                throw new \InvalidArgumentException('floats expected an array of float');
-            }
-            \$this->floats[] = \$__value;
-        }
-
-        foreach (\$emails as \$__value) {
-            if (! \$__value instanceof \Foo\Bar\Email) {
-                throw new \InvalidArgumentException('emails expected an array of Foo\Bar\Email');
-            }
-            \$this->emails[] = \$__value;
-        }
-
+        parent::__construct(\$message, \$code, \$previous);
     }
 
 STRING;

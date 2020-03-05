@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -58,6 +59,7 @@ class FromString extends AbstractDeriving
             Query::VALUE,
             MicroAggregateChanged::VALUE,
             Uuid::VALUE,
+            Exception::VALUE,
         ];
     }
 }

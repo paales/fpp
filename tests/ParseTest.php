@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of prolic/fpp.
  * (c) 2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
@@ -11,6 +12,7 @@ declare(strict_types=1);
 
 namespace FppTest;
 
+use Fpp\Argument;
 use Fpp\Deriving;
 use Fpp\ParseError;
 use org\bovigo\vfs\vfsStream;
@@ -1071,6 +1073,16 @@ CODE;
         $this->assertSame($scalarListType, $definition->constructors()[0]->name());
     }
 
+    public function scalarListTypes(): array
+    {
+        return [
+            ['Bool[]'],
+            ['Float[]'],
+            ['Int[]'],
+            ['String[]'],
+        ];
+    }
+
     /**
      * @test
      */
@@ -1090,6 +1102,76 @@ CODE;
         $this->assertSame('r', $deriving->valueMapping()['Red']);
         $this->assertSame(0, $deriving->valueMapping()['Green']);
         $this->assertSame(['foo' => 'bar', 'baz', 1, true, 'bam' => 123], $deriving->valueMapping()['Yellow']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_parses_exception_without_base_class(): void
+    {
+        $contents = <<<CODE
+namespace Foo;
+data UserNotFound = UserNotFound deriving (Exception);
+CODE;
+
+        $collection = parse($this->createDefaultFile($contents), $this->derivingMap);
+        $definition = $collection->definition('Foo', 'UserNotFound');
+        /** @var Deriving\Exception $deriving */
+        $deriving = $definition->derivings()[0];
+
+        $this->assertSame('\\Exception', $deriving->baseClass());
+    }
+
+    /**
+     * @test
+     */
+    public function it_parses_exception_with_base_class(): void
+    {
+        $contents = <<<CODE
+namespace Foo;
+data UserNotFound = UserNotFound deriving (Exception: \RuntimeException);
+CODE;
+
+        $collection = parse($this->createDefaultFile($contents), $this->derivingMap);
+        $definition = $collection->definition('Foo', 'UserNotFound');
+        /** @var Deriving\Exception $deriving */
+        $deriving = $definition->derivings()[0];
+
+        $this->assertSame('\\RuntimeException', $deriving->baseClass());
+    }
+
+    /**
+     * @test
+     */
+    public function it_parses_exception_with_constructors(): void
+    {
+        $contents = <<<CODE
+namespace Foo;
+data UserNotFound = UserNotFound deriving (Exception) with
+    | withEmail { string \$email } => 'User with email {{\$email}} cannot be found'
+    | create => 'User is nowhere to be found'
+    | _ => 'No user found';
+CODE;
+
+        $collection = parse($this->createDefaultFile($contents), $this->derivingMap);
+        $definition = $collection->definition('Foo', 'UserNotFound');
+        /** @var Deriving\Exception $deriving */
+        $deriving = $definition->derivings()[0];
+
+        $this->assertSame('No user found', $deriving->defaultMessage());
+        $ctors = $deriving->constructors();
+        $this->assertCount(2, $ctors);
+
+        $this->assertSame('withEmail', $ctors[0]->name());
+        $this->assertSame('User with email {{$email}} cannot be found', $ctors[0]->message());
+        $args = $ctors[0]->arguments();
+        $this->assertCount(1, $args);
+        $this->assertEquals(new Argument('email', 'string', false, false), $args[0]);
+
+        $this->assertSame('create', $ctors[1]->name());
+        $this->assertSame('User is nowhere to be found', $ctors[1]->message());
+        $args = $ctors[1]->arguments();
+        $this->assertCount(0, $args);
     }
 
     /**
@@ -1185,13 +1267,54 @@ CODE;
         $this->assertSame('MyMarkerB', (string) $definition->markers()[1]);
     }
 
-    public function scalarListTypes(): array
+    /**
+     * @test
+     */
+    public function it_throws_exception_when_data_definition_does_not_end_in_semicolon(): void
     {
-        return [
-            ['Bool[]'],
-            ['Float[]'],
-            ['Int[]'],
-            ['String[]'],
-        ];
+        $this->expectException(ParseError::class);
+
+        $contents = <<<CODE
+namespace Foo;
+data Foo = Foo SOME_NONSENSE_TOKEN
+CODE;
+
+        parse($this->createDefaultFile($contents), $this->derivingMap);
+    }
+
+    /**
+     * @test
+     */
+    public function is_parses_deriving_argument_on_enum(): void
+    {
+        $contents = <<<CODE
+namespace Foo;
+data Color = Red | Blue deriving(Enum(useValue, bla));
+data LotTracing = BestBeforeDate | NoBestBeforeDate deriving(Enum(useValue)) with (BestBeforeDate:'01', NoBestBeforeDate: '03');
+data MyTracing = BestBeforeDate | NoBestBeforeDate deriving(Enum(useName)) with (BestBeforeDate:'01', NoBestBeforeDate: '03');
+CODE;
+
+        $collection = parse($this->createDefaultFile($contents), $this->derivingMap);
+        $definition = $collection->definition('Foo', 'Color');
+        $this->assertSame('Enum', (string) $definition->derivings()[0]);
+
+        /** @var Deriving\Enum $deriving */
+        $deriving = $definition->derivings()[0];
+        $this->assertTrue($deriving->useValue());
+    }
+
+    /**
+     * @test
+     */
+    public function it_parses_deriving_arguments_on_other_derivings(): void
+    {
+        $contents = <<<CODE
+namespace Something;
+data Person = Person { string \$name, ?int \$age } deriving(FromArray(nonExistingArgument));
+CODE;
+
+        $this->expectException(\Fpp\InvalidDeriving::class);
+        $this->expectExceptionMessage('Deriving FromArray doesn\'t expect any arguments');
+        parse($this->createDefaultFile($contents), $this->derivingMap);
     }
 }
